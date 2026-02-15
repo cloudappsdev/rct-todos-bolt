@@ -1,8 +1,8 @@
 # React + TypeScript + Vite
 
-## originally created with Bolt but didn't have external Supabase URL
+# originally created with Bolt but didn't have external Supabase URL
 
-# Bolt did not easily let you save the code, without being on the Pro plan
+## Bolt did not easily let you save the code, without being on the Pro plan
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
