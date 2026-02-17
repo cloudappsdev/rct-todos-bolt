@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import type { Todo } from "../lib/supabase";
+import type { Todo } from "../types/Todo";
+
+// const API_URL = "https://your-api.com/tasks";
+const API_URL = "http://localhost:8080/api/tudus";
 
 interface TodoModalProps {
   isOpen: boolean;
@@ -9,18 +12,39 @@ interface TodoModalProps {
   todo?: Todo | null;
 }
 
-export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
+const initialFormState = {
+  name: "",
+  description: "",
+  effort: "",
+  pctComplete: 0,
+};
+
+export function TodoModal({ isOpen, onClose, todo }: TodoModalProps) {
+  /* 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [effort, setEffort] = useState(1);
+
   const [pctComplete, setPctComplete] = useState(0);
+ */
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [effort, setEffort] = useState(1);
+
+  const [pctComplete, setPctComplete] = useState(0);
+
+  const [formData, setFormData] = useState(initialFormState);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (todo) {
       setName(todo.name);
       setDescription(todo.description);
       setEffort(todo.effort);
-      setPctComplete(todo.pct_complete);
+      setPctComplete(todo.pctComplete);
     } else {
       setName("");
       setDescription("");
@@ -29,6 +53,7 @@ export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
     }
   }, [todo, isOpen]);
 
+  /* 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -38,6 +63,57 @@ export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
       pct_complete: pctComplete,
       is_done: todo?.is_done || false,
     });
+  };
+ */
+
+  // Generic change handler — works for all input types
+  const handleChange = (e) => {
+    console.log("e", "howdy", e);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    // Build the payload — id and other server-managed fields are intentionally omitted
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      effort: Number(formData.effort),
+      pctComplete: Number(formData.pctComplete),
+    };
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // "Authorization": `Bearer ${token}`, // 🔧 Add auth header if needed
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        // Parse error body if the API returns one, otherwise fall back to status text
+        const errData = await response.json().catch(() => null);
+        throw new Error(
+          errData?.message ??
+            `Request failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const created = await response.json(); // The API returns the newly-created object (with its id, etc.)
+      console.log("Created task:", created);
+
+      setSuccess(true);
+      setFormData(initialFormState); // Reset form after successful submission
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -69,8 +145,8 @@ export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
               <input
                 type="text"
                 id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value.slice(0, 65))}
+                value={formData.name}
+                onChange={handleChange}
                 maxLength={65}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
@@ -88,8 +164,8 @@ export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
               <input
                 type="text"
                 id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value.slice(0, 65))}
+                value={formData.description}
+                onChange={handleChange}
                 maxLength={65}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 placeholder="Enter description"
@@ -106,16 +182,13 @@ export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
               <input
                 type="number"
                 id="effort"
-                value={effort}
-                onChange={(e) =>
-                  setEffort(
-                    Math.min(10, Math.max(1, parseInt(e.target.value) || 1)),
-                  )
-                }
+                value={formData.effort}
+                onChange={handleChange}
                 min={1}
                 max={10}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="Effort"
               />
             </div>
 
@@ -129,16 +202,13 @@ export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
               <input
                 type="number"
                 id="pctComplete"
-                value={pctComplete}
-                onChange={(e) =>
-                  setPctComplete(
-                    Math.min(100, Math.max(0, parseInt(e.target.value) || 0)),
-                  )
-                }
+                value={formData.pctComplete}
+                onChange={handleChange}
                 min={0}
                 max={100}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="Percent Complete"
               />
             </div>
           </div>
@@ -155,7 +225,7 @@ export function TodoModal({ isOpen, onClose, onSubmit, todo }: TodoModalProps) {
               type="submit"
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              Submit
+              {isLoading ? "Saving…" : "Submit Create Task"}
             </button>
           </div>
         </form>

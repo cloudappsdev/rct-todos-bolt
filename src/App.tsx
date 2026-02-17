@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { ArrowUp, ArrowDown, X } from "lucide-react";
-import { supabase } from "./lib/supabase";
-import type { Todo } from "./lib/supabase";
 import { TodoModal } from "./components/TodoModal";
+import type { Todo } from "./types/Todo";
 
 type SortField = "name" | "effort" | "pct_complete" | "date_updated";
 type SortDirection = "asc" | "desc";
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [sortField, setSortField] = useState<SortField>("date_updated");
@@ -19,15 +19,15 @@ function App() {
   }, []);
 
   const fetchTodos = async () => {
-    const { data, error } = await supabase
-      .from("todos")
-      .select("*")
-      .order("date_updated", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching todos:", error);
-    } else {
-      setTodos(data || []);
+    try {
+      const res = await fetch("http://localhost:8080/api/tudus");
+      if (!res.ok) throw new Error("Network response was not ok");
+      const data = await res.json();
+      setTodos(data);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -167,6 +167,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
+          {loading && <h1>Loading!</h1>}
           <h1 className="text-4xl font-bold text-gray-800 mb-6">
             Todo Manager
           </h1>
