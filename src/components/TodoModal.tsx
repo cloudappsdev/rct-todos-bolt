@@ -5,10 +5,17 @@ import type { Todo } from "../types/Todo";
 // const API_URL = "https://your-api.com/tasks";
 const API_URL = "http://localhost:8080/api/tudus";
 
+/* 
 interface TodoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (todo: Omit<Todo, "id" | "date_created" | "date_updated">) => void;
+  todo?: Todo | null;
+}
+ */
+interface TodoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   todo?: Todo | null;
 }
 
@@ -66,9 +73,13 @@ export function TodoModal({ isOpen, onClose, todo }: TodoModalProps) {
   };
  */
 
-  // Generic change handler — works for all input types
+  // Generic change handler — works for text,y textarea, number, and range inputs
   const handleChange = (e) => {
-    console.log("e", "howdy", e);
+    const { name, value, type } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "number" || type === "range" ? Number(value) : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
